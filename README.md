@@ -31,6 +31,39 @@ You would need git-lfs to access the data. If you are facing issue related to LF
 
 ![figure](./misc/cc_trans_dataset.png)
 
+### Generate Synthetic Credit Card Transactions
+
+To generate a new CSV with the same schema as `card_transaction.v1.csv`, run:
+
+```
+python tools/generate_card_transactions.py \
+  --output data/credit_card/generated/card_transaction.v1.csv \
+  --n-transactions 1000000 \
+  --n-users 2000 \
+  --seed 9
+```
+
+The generator streams per-user chronological transactions and lets you configure dataset size, user count, merchant count, date range, fraud rate, cards per user, write chunk size, and the random seed.
+When an original `card_transaction.v1.csv` is available in a common local TabFormer path, the generator first fits empirical profile tables from it and samples from those tables so the generated data better matches the source marginal and conditional distributions. Use `--profile-csv /path/to/card_transaction.v1.csv` to choose the reference file explicitly, or `--no-empirical-profile` to use the built-in fallback generator.
+
+Validate a generated file with:
+
+```
+python tools/generate_card_transactions.py \
+  --validate data/credit_card/generated/card_transaction.v1.csv \
+  --expected-rows 1000000
+```
+
+Train against the generated file by pointing `main.py` at the output directory and using the base file name without `.csv`:
+
+```
+python main.py --do_train --mlm --field_ce --lm_type bert \
+  --data_type card \
+  --data_root data/credit_card/generated \
+  --data_fname card_transaction.v1 \
+  --output_dir checkpoints/generated
+```
+
 ---
 
 ### PRSA Dataset
